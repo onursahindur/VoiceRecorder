@@ -162,7 +162,7 @@
     [[OSAudioManager sharedInstance] pausePlaying];
     NSIndexPath *indexPath = [self.playerTableView indexPathForCell:cell];
     
-    [[OSAudioManager sharedInstance] removeFile:cell.fileURL.absoluteString];
+    [[OSAudioManager sharedInstance] removeFile:cell.fileURL.path];
     for (NSURL *url in self.audioFilesURLArray)
     {
         if (url.absoluteString == fileURL.absoluteString)

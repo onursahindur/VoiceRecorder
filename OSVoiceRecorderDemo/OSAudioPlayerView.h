@@ -25,5 +25,6 @@
 @property (nonatomic, weak) id <OSAudioPlayerViewDelegate> delegate;
 
 - (void)changeTableViewHeight:(BOOL)increment;
+- (void)addTableViewRow;
 
 @end

@@ -73,6 +73,15 @@
     }
 }
 
+- (void)addTableViewRow
+{
+    NSIndexPath *indexPath = [NSIndexPath indexPathForRow:self.audioFilesURLArray.count-1 inSection:0];
+    [self.playerTableView beginUpdates];
+    [self.playerTableView insertRowsAtIndexPaths:@[indexPath]
+                                withRowAnimation:UITableViewRowAnimationTop];
+    [self.playerTableView endUpdates];
+}
+
 #pragma mark - UITableView Delegate & Datasource
 - (NSInteger)tableView:(UITableView *)tableView numberOfRowsInSection:(NSInteger)section
 {
@@ -89,10 +98,7 @@
     OSAudioTableViewCell *cell = [tableView dequeueReusableCellWithIdentifier:@"OSAudioTableViewCell" forIndexPath:indexPath];
     cell.fileURL = [self.audioFilesURLArray objectAtIndex:indexPath.row];
     cell.delegate = self;
-    cell.seekableSlider.value = cell.currentTime;
-    CGFloat minutes = floor(cell.currentTime / 60);
-    CGFloat seconds = cell.currentTime - (minutes * 60);
-    cell.timeLabel.text = [[NSString alloc] initWithFormat:@"%02.0f:%02.0f", minutes, seconds];
+    [cell showInitialState];
     return cell;
 }
 
@@ -154,6 +160,8 @@
      didTappedDeleteButton:(NSURL *)fileURL
 {
     [[OSAudioManager sharedInstance] pausePlaying];
+    NSIndexPath *indexPath = [self.playerTableView indexPathForCell:cell];
+    
     [[OSAudioManager sharedInstance] removeFile:cell.fileURL.absoluteString];
     for (NSURL *url in self.audioFilesURLArray)
     {
@@ -163,7 +171,10 @@
             break;
         }
     }
-    [self.playerTableView reloadData];
+    [self.playerTableView beginUpdates];
+    [self.playerTableView deleteRowsAtIndexPaths:@[indexPath]
+                                withRowAnimation:UITableViewRowAnimationTop];
+    [self.playerTableView endUpdates];
     [self changeTableViewHeight:NO];
 }
 

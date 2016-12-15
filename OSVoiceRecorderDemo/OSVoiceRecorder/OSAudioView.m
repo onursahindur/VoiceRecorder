@@ -65,7 +65,7 @@
 {
     NSURL *fileURL = [OSAudioManager sharedInstance].recorder.url;
     [self.playerView.audioFilesURLArray addObject:fileURL];
-    [self.playerView.playerTableView reloadData];
+    [self.playerView addTableViewRow];
     [self.playerView changeTableViewHeight:YES];
 }
 
@@ -82,13 +82,11 @@
             break;
         }
     }
-    [UIView animateWithDuration:0.2f delay:0.0f options:UIViewAnimationOptionCurveLinear animations:^{
-        heightConstraint.constant = height;
-        [self.playerView layoutIfNeeded];
-    } completion:^(BOOL finished) {
-        
-    }];
-    self.recorderView.recordNumber = addedRow ? self.recorderView.recordNumber + 1 : self.recorderView.recordNumber - 1;
+    heightConstraint.constant = height;
+    if (addedRow)
+    {
+        self.recorderView.recordNumber++;
+    }
 }
 
 

@@ -13,7 +13,7 @@
 
 @interface OSAudioPlayerView () <UITableViewDelegate, UITableViewDataSource, OSAudioTableViewCellDelegate>
 
-@property (nonatomic, assign) CGFloat collectionViewHeight;
+@property (nonatomic, assign) CGFloat tableViewHeight;
 @property (nonatomic, strong) NSIndexPath *currentlyPlayingCellIndexPath;
 
 @end
@@ -34,7 +34,7 @@
 - (void)initSubViews
 {
     self.audioFilesURLArray = [NSMutableArray new];
-    self.collectionViewHeight = 1.0f;
+    self.tableViewHeight = 1.0f;
     self.playerTableView = [[UITableView alloc] initWithFrame:CGRectZero];
     self.playerTableView.delegate = self;
     self.playerTableView.dataSource = self;
@@ -49,6 +49,28 @@
     [self.playerTableView distanceTopToSuperview:0.0f];
     [self.playerTableView distanceRightToSuperview:0.0f];
     [self.playerTableView setHeightConstraint:1.0f];
+}
+
+#pragma mark - Self methods
+- (void)changeTableViewHeight:(BOOL)increment
+{
+    self.tableViewHeight = increment ? self.tableViewHeight + 50.0f : self.tableViewHeight - 50.0f;
+    NSLayoutConstraint *heightConstraint;
+    for (NSLayoutConstraint *constraint in self.playerTableView.constraints)
+    {
+        if (constraint.firstAttribute == NSLayoutAttributeHeight)
+        {
+            heightConstraint = constraint;
+            break;
+        }
+    }
+    heightConstraint.constant = self.tableViewHeight;
+    if ([self.delegate respondsToSelector:@selector(audioPlayerView:didRowNumberChanged:withTableViewHeight:)])
+    {
+        [self.delegate audioPlayerView:self
+                   didRowNumberChanged:increment
+                   withTableViewHeight:self.tableViewHeight];
+    }
 }
 
 #pragma mark - UITableView Delegate & Datasource
@@ -67,68 +89,26 @@
     OSAudioTableViewCell *cell = [tableView dequeueReusableCellWithIdentifier:@"OSAudioTableViewCell" forIndexPath:indexPath];
     cell.fileURL = [self.audioFilesURLArray objectAtIndex:indexPath.row];
     cell.delegate = self;
+    cell.seekableSlider.value = cell.currentTime;
+    CGFloat minutes = floor(cell.currentTime / 60);
+    CGFloat seconds = cell.currentTime - (minutes * 60);
+    cell.timeLabel.text = [[NSString alloc] initWithFormat:@"%02.0f:%02.0f", minutes, seconds];
     return cell;
-}
-
-- (void)incrementTableViewHeightConstraint
-{
-    self.collectionViewHeight += 50.0f;
-    NSLayoutConstraint *heightConstraint;
-    for (NSLayoutConstraint *constraint in self.playerTableView.constraints)
-    {
-        if (constraint.firstAttribute == NSLayoutAttributeHeight)
-        {
-            heightConstraint = constraint;
-            break;
-        }
-    }
-    heightConstraint.constant = self.collectionViewHeight;
-    if ([self.delegate respondsToSelector:@selector(audioPlayerAddedRow:)])
-    {
-        [self.delegate audioPlayerAddedRow:self.collectionViewHeight];
-    }
 }
 
 #pragma mark - OSAudioTableViewCell Delegate
 - (void)audioTableViewCell:(OSAudioTableViewCell *)cell
   didTappedPlayPauseButton:(AudioPlayerViewState)state
 {
-    // Pause playing
-    if (state == AudioPlayerViewStateWaiting)
+    if ([OSAudioManager sharedInstance].recorder.isRecording)
     {
-        self.currentlyPlayingCellIndexPath = nil;
-        [[OSAudioManager sharedInstance] pausePlaying];
-        cell.pauseStart = [NSDate dateWithTimeIntervalSinceNow:0];
-        cell.previousFireDate = [[OSAudioManager sharedInstance].timer fireDate];
-        cell.currentTime = [OSAudioManager sharedInstance].player.currentTime;
-        [[NSNotificationCenter defaultCenter] removeObserver:self
-                                                        name:timerTicked
-                                                      object:[OSAudioManager sharedInstance]];
-        [[NSNotificationCenter defaultCenter] removeObserver:self
-                                                        name:playingFinished
-                                                      object:[OSAudioManager sharedInstance]];
+        // recording.. do not allow play or pause actions..
+        return;
     }
     // Start playing
     else if (state == AudioPlayerViewStatePlaying)
     {
-        self.currentlyPlayingCellIndexPath = [self.playerTableView indexPathForCell:cell];
-        
-        if (cell.pauseStart && cell.previousFireDate)
-        {
-            [[OSAudioManager sharedInstance] prepareToPlay:cell.fileURL
-                                            withPauseStart:cell.pauseStart
-                                      withPreviousFireDate:cell.previousFireDate
-                                           withCurrentTime:cell.currentTime];
-        }
-        else
-        {
-            [[OSAudioManager sharedInstance] prepareToPlay:cell.fileURL
-                                            withPauseStart:nil
-                                      withPreviousFireDate:nil
-                                           withCurrentTime:cell.currentTime];
-        }
-        cell.seekableSlider.maximumValue = [OSAudioManager sharedInstance].player.duration;
-        [[OSAudioManager sharedInstance] startPlaying];
+        // Add observers
         [[NSNotificationCenter defaultCenter] addObserver:self
                                                  selector:@selector(updateTimeLabel:)
                                                      name:timerTicked
@@ -137,14 +117,54 @@
                                                  selector:@selector(managerDidFinishPlaying:)
                                                      name:playingFinished
                                                    object:[OSAudioManager sharedInstance]];
-    }
         
+        [[OSAudioManager sharedInstance] prepareToPlay:cell.fileURL
+                                        withPauseStart:(cell.pauseStart && cell.previousFireDate) ? cell.pauseStart : nil
+                                  withPreviousFireDate:(cell.pauseStart && cell.previousFireDate) ? cell.previousFireDate : nil
+                                       withCurrentTime:cell.currentTime];
+        self.currentlyPlayingCellIndexPath = [self.playerTableView indexPathForCell:cell];
+        cell.seekableSlider.maximumValue = [OSAudioManager sharedInstance].player.duration;
+        [cell.playPauseButton setBackgroundImage:[UIImage imageNamed:@"pause"]
+                                        forState:UIControlStateNormal];
+        [[OSAudioManager sharedInstance] startPlaying];
+    }
+    // Pause playing
+    else if (state == AudioPlayerViewStateWaiting)
+    {
+        // Remove observers
+        [[NSNotificationCenter defaultCenter] removeObserver:self
+                                                        name:timerTicked
+                                                      object:[OSAudioManager sharedInstance]];
+        [[NSNotificationCenter defaultCenter] removeObserver:self
+                                                        name:playingFinished
+                                                      object:[OSAudioManager sharedInstance]];
+        
+        self.currentlyPlayingCellIndexPath = nil;
+        cell.pauseStart = [NSDate dateWithTimeIntervalSinceNow:0];
+        cell.previousFireDate = [[OSAudioManager sharedInstance].timer fireDate];
+        cell.currentTime = [OSAudioManager sharedInstance].player.currentTime;
+        [cell.playPauseButton setBackgroundImage:[UIImage imageNamed:@"play"]
+                                        forState:UIControlStateNormal];
+        [[OSAudioManager sharedInstance] pausePlaying];
+        
+    }
 }
 
 - (void)audioTableViewCell:(OSAudioTableViewCell *)cell
      didTappedDeleteButton:(NSURL *)fileURL
 {
-    
+    [[OSAudioManager sharedInstance] pausePlaying];
+    [[OSAudioManager sharedInstance] removeFile:cell.fileURL.absoluteString];
+    for (NSURL *url in self.audioFilesURLArray)
+    {
+        if (url.absoluteString == fileURL.absoluteString)
+        {
+            [self.audioFilesURLArray removeObjectAtIndex:[self.audioFilesURLArray indexOfObject:url]];
+            break;
+        }
+    }
+    [self.playerTableView reloadData];
+    [self changeTableViewHeight:NO];
 }
 
 - (void)audioTableViewCell:(OSAudioTableViewCell *)cell

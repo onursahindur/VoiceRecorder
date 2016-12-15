@@ -58,15 +58,11 @@
     // State wating prepare for start
     if (self.state == AudioPlayerViewStateWaiting)
     {
-        [self.playPauseButton setBackgroundImage:[UIImage imageNamed:@"pause"]
-                                        forState:UIControlStateNormal];
         self.state = AudioPlayerViewStatePlaying;
     }
     // State playing, prepare for pause
     else if (self.state == AudioPlayerViewStatePlaying)
     {
-        [self.playPauseButton setBackgroundImage:[UIImage imageNamed:@"play"]
-                                        forState:UIControlStateNormal];
         self.state = AudioPlayerViewStateWaiting;
     }
     if ([self.delegate respondsToSelector:@selector(audioTableViewCell:didTappedPlayPauseButton:)])

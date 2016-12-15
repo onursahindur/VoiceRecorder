@@ -66,11 +66,12 @@
     NSURL *fileURL = [OSAudioManager sharedInstance].recorder.url;
     [self.playerView.audioFilesURLArray addObject:fileURL];
     [self.playerView.playerTableView reloadData];
-    [self.playerView incrementTableViewHeightConstraint];
-    self.recorderView.recordNumber++;
+    [self.playerView changeTableViewHeight:YES];
 }
 
-- (void)audioPlayerAddedRow:(CGFloat)height
+- (void)audioPlayerView:(OSAudioPlayerView *)view
+    didRowNumberChanged:(BOOL)addedRow
+    withTableViewHeight:(CGFloat)height
 {
     NSLayoutConstraint *heightConstraint;
     for (NSLayoutConstraint *constraint in self.playerView.constraints)
@@ -87,6 +88,7 @@
     } completion:^(BOOL finished) {
         
     }];
+    self.recorderView.recordNumber = addedRow ? self.recorderView.recordNumber + 1 : self.recorderView.recordNumber - 1;
 }
 
 

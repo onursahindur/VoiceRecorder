@@ -11,7 +11,9 @@
 @class OSAudioPlayerView;
 @protocol OSAudioPlayerViewDelegate <NSObject>
 
-- (void)audioPlayerAddedRow:(CGFloat)height;
+- (void)audioPlayerView:(OSAudioPlayerView *)view
+    didRowNumberChanged:(BOOL)addedRow
+    withTableViewHeight:(CGFloat)height;
 
 @end
 
@@ -22,6 +24,6 @@
 
 @property (nonatomic, weak) id <OSAudioPlayerViewDelegate> delegate;
 
-- (void)incrementTableViewHeightConstraint;
+- (void)changeTableViewHeight:(BOOL)increment;
 
 @end

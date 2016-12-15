@@ -33,4 +33,6 @@ static NSString *const playingFinished          = @"AudioManagerFinishedPlaying"
 - (void)startPlaying;
 - (void)pausePlaying;
 
+- (void)removeFile:(NSString *)filePath;
+
 @end

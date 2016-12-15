@@ -86,17 +86,14 @@
     self.player = [[AVAudioPlayer alloc] initWithContentsOfURL:fileURL error:&error];
     self.player.delegate = self;
     self.player.currentTime = currentTime;
+    self.timer = [NSTimer scheduledTimerWithTimeInterval:1.0 target:self
+                                                selector:@selector(timerTickTock:)
+                                                userInfo:@{@"player":@1}
+                                                 repeats:YES];
     if (pauseStart && previousFireDate)
     {
         float pauseTime = -1 * [pauseStart timeIntervalSinceNow];
         [self.timer setFireDate:[NSDate dateWithTimeInterval:pauseTime sinceDate:previousFireDate]];
-    }
-    else
-    {
-        self.timer = [NSTimer scheduledTimerWithTimeInterval:1.0 target:self
-                                                    selector:@selector(timerTickTock:)
-                                                    userInfo:@{@"player":@1}
-                                                     repeats:YES];
     }
 }
 
@@ -107,23 +104,22 @@
 
 - (void)pausePlaying
 {
+    [self.timer invalidate];
     [self.player pause];
+}
+
+- (void)removeFile:(NSString *)filePath
+{
+    NSError *error = nil;
+    [[NSFileManager defaultManager] removeItemAtPath:filePath error:&error];
 }
 
 - (void)timerTickTock:(NSTimer *)sender
 {
     float minutes;
     float seconds;
-    if (sender.userInfo)
-    {
-        minutes = floor(self.player.currentTime / 60);
-        seconds = self.player.currentTime - (minutes * 60);
-    }
-    else
-    {
-        minutes = floor(self.recorder.currentTime / 60);
-        seconds = self.recorder.currentTime - (minutes * 60);
-    }
+    minutes = floor((sender.userInfo ? self.player.currentTime : self.recorder.currentTime) / 60);
+    seconds = (sender.userInfo ? self.player.currentTime : self.recorder.currentTime) - (minutes * 60);
     
     NSString *time = [[NSString alloc]
                       initWithFormat:@"%02.0f:%02.0f",
@@ -139,6 +135,7 @@
                            successfully:(BOOL)flag
 {
     [self.timer invalidate];
+    self.timer = nil;
     NSDictionary *userInfo = @{@"successful":[NSNumber numberWithBool:flag]};
     [[NSNotificationCenter defaultCenter] postNotificationName:recordingFinished
                                                         object:self
@@ -149,6 +146,7 @@
                        successfully:(BOOL)flag
 {
     [self.timer invalidate];
+    self.timer = nil;
     NSDictionary *userInfo = @{@"successful":[NSNumber numberWithBool:flag]};
     [[NSNotificationCenter defaultCenter] postNotificationName:playingFinished
                                                         object:self

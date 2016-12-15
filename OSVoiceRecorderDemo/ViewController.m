@@ -31,7 +31,6 @@
     [audioToolbox distanceTopToSuperview:100.0f];
     [audioToolbox setWidthConstraint:CGRectGetWidth(self.view.frame)];
     [audioToolbox setHeightConstraint:800.0f];
-    
 }
 
 @end

@@ -7,11 +7,10 @@
 //
 
 #import "ViewController.h"
-#import "OSVoiceRecorder.h"
+#import "UIView+LayoutConstraints.h"
+#import "OSAudioView.h"
 
 @interface ViewController ()
-
-@property(nonatomic, strong) OSVoiceRecorder *recorder;
 
 @end
 
@@ -21,14 +20,18 @@
 {
     [super viewDidLoad];
     self.view.backgroundColor = [UIColor lightGrayColor];
-    self.recorder = [[OSVoiceRecorder alloc] initDefault];
-    OSVoiceRecorderView *recorderView = [self. recorder addRecordViewToView:self.view
-                                                            withFrame:CGRectMake(0.0f, 0.0f, 300.0f, 100.0f)
-                                                   withViewController:self];
-    recorderView.center = CGPointMake(CGRectGetMidX(self.view.bounds), CGRectGetMidY(self.view.bounds));
-    recorderView.layer.cornerRadius = 25;
-    recorderView.layer.masksToBounds = YES;
+    
+    
+    OSAudioView *audioToolbox = [[OSAudioView alloc] initWithFrame:CGRectZero
+                                              parentViewController:self];
+    audioToolbox.backgroundColor = [UIColor whiteColor];
+    [self.view addSubview:audioToolbox];
+    audioToolbox.translatesAutoresizingMaskIntoConstraints = NO;
+    [audioToolbox distanceLeftToSuperview:0.0f];
+    [audioToolbox distanceTopToSuperview:100.0f];
+    [audioToolbox setWidthConstraint:CGRectGetWidth(self.view.frame)];
+    [audioToolbox setHeightConstraint:800.0f];
+    
 }
-
 
 @end

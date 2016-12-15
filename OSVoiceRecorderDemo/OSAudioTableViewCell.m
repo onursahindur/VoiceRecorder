@@ -36,7 +36,7 @@
 {
     self.timeLabel.text = @"00:00";
     self.seekableSlider.value = 0.0f;
-    [self.playPauseButton setBackgroundImage:[UIImage imageNamed:@"play"]
+    [self.playPauseButton setBackgroundImage:[UIImage imageNamed:@"voice_record_play"]
                                     forState:UIControlStateNormal];
     self.state = AudioPlayerViewStateWaiting;
     self.currentTime = 0;

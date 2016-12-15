@@ -38,6 +38,7 @@
     self.playerTableView = [[UITableView alloc] initWithFrame:CGRectZero];
     self.playerTableView.delegate = self;
     self.playerTableView.dataSource = self;
+    self.playerTableView.bounces = NO;
     [self.playerTableView registerNib:[UINib nibWithNibName:@"OSAudioTableViewCell" bundle:nil] forCellReuseIdentifier:@"OSAudioTableViewCell"];
     [self addSubview:self.playerTableView];
 }
@@ -163,7 +164,7 @@
     cell.pauseStart = [NSDate dateWithTimeIntervalSinceNow:0];
     cell.previousFireDate = [[OSAudioManager sharedInstance].timer fireDate];
     cell.currentTime = [OSAudioManager sharedInstance].player.currentTime;
-    [cell.playPauseButton setBackgroundImage:[UIImage imageNamed:@"play"]
+    [cell.playPauseButton setBackgroundImage:[UIImage imageNamed:@"voice_record_play"]
                                     forState:UIControlStateNormal];
     [[OSAudioManager sharedInstance] pausePlaying];
 }

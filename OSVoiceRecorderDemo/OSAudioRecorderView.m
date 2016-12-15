@@ -38,7 +38,7 @@
     self.waitingView.alpha = 1.0f;
     [self addSubview:self.waitingView];
     
-    self.recordImageView = [[UIImageView alloc] initWithImage:[UIImage imageNamed:@"recorder"]];
+    self.recordImageView = [[UIImageView alloc] initWithImage:[UIImage imageNamed:@"voice_record_record"]];
     [self.waitingView addSubview:self.recordImageView];
     
     self.startRecordLabel = [UILabel new];
@@ -57,7 +57,7 @@
     self.stopRecordButton = [UIButton new];
     [self.stopRecordButton addTarget:self action:@selector(stopRecord:)
                     forControlEvents:UIControlEventTouchUpInside];
-    [self.stopRecordButton setBackgroundImage:[UIImage imageNamed:@"stop"]
+    [self.stopRecordButton setBackgroundImage:[UIImage imageNamed:@"voice_record_stop"]
                                      forState:UIControlStateNormal];
     [self.recordingView addSubview:self.stopRecordButton];
     
@@ -111,7 +111,7 @@
     [self.stopRecordButton centerYInSuperview];
     
     self.recordingTimeLabel.translatesAutoresizingMaskIntoConstraints = NO;
-    [self.recordingTimeLabel distanceRightToSuperview:10.0f];
+    [self.recordingTimeLabel distanceRightToSuperview:40.0f];
     [self.recordingTimeLabel setHeightConstraint:30.0f];
     [self.recordingTimeLabel setWidthConstraint:50.0f];
     [self.recordingTimeLabel centerYInSuperview];

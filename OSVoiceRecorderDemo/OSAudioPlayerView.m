@@ -106,14 +106,22 @@
 - (void)audioTableViewCell:(OSAudioTableViewCell *)cell
   didTappedPlayPauseButton:(AudioPlayerViewState)state
 {
+    // recording.. do not allow play or pause actions..
     if ([OSAudioManager sharedInstance].recorder.isRecording)
     {
-        // recording.. do not allow play or pause actions..
         return;
     }
     // Start playing
     else if (state == AudioPlayerViewStatePlaying)
     {
+        // Another file is playing. Change it to stop state first
+        if (self.currentlyPlayingCellIndexPath)
+        {
+            OSAudioTableViewCell *cell = [self.playerTableView cellForRowAtIndexPath:self.currentlyPlayingCellIndexPath];
+            cell.state = AudioPlayerViewStateWaiting;
+            [self pausePlayingForCell:cell];
+        }
+        
         // Add observers
         [[NSNotificationCenter defaultCenter] addObserver:self
                                                  selector:@selector(updateTimeLabel:)
@@ -124,11 +132,11 @@
                                                      name:playingFinished
                                                    object:[OSAudioManager sharedInstance]];
         
+        self.currentlyPlayingCellIndexPath = [self.playerTableView indexPathForCell:cell];
         [[OSAudioManager sharedInstance] prepareToPlay:cell.fileURL
                                         withPauseStart:(cell.pauseStart && cell.previousFireDate) ? cell.pauseStart : nil
                                   withPreviousFireDate:(cell.pauseStart && cell.previousFireDate) ? cell.previousFireDate : nil
                                        withCurrentTime:cell.currentTime];
-        self.currentlyPlayingCellIndexPath = [self.playerTableView indexPathForCell:cell];
         cell.seekableSlider.maximumValue = [OSAudioManager sharedInstance].player.duration;
         [cell.playPauseButton setBackgroundImage:[UIImage imageNamed:@"pause"]
                                         forState:UIControlStateNormal];
@@ -137,23 +145,27 @@
     // Pause playing
     else if (state == AudioPlayerViewStateWaiting)
     {
-        // Remove observers
-        [[NSNotificationCenter defaultCenter] removeObserver:self
-                                                        name:timerTicked
-                                                      object:[OSAudioManager sharedInstance]];
-        [[NSNotificationCenter defaultCenter] removeObserver:self
-                                                        name:playingFinished
-                                                      object:[OSAudioManager sharedInstance]];
-        
-        self.currentlyPlayingCellIndexPath = nil;
-        cell.pauseStart = [NSDate dateWithTimeIntervalSinceNow:0];
-        cell.previousFireDate = [[OSAudioManager sharedInstance].timer fireDate];
-        cell.currentTime = [OSAudioManager sharedInstance].player.currentTime;
-        [cell.playPauseButton setBackgroundImage:[UIImage imageNamed:@"play"]
-                                        forState:UIControlStateNormal];
-        [[OSAudioManager sharedInstance] pausePlaying];
-        
+        [self pausePlayingForCell:cell];
     }
+}
+
+- (void)pausePlayingForCell:(OSAudioTableViewCell *)cell
+{
+    // Remove observers
+    [[NSNotificationCenter defaultCenter] removeObserver:self
+                                                    name:timerTicked
+                                                  object:[OSAudioManager sharedInstance]];
+    [[NSNotificationCenter defaultCenter] removeObserver:self
+                                                    name:playingFinished
+                                                  object:[OSAudioManager sharedInstance]];
+    
+    self.currentlyPlayingCellIndexPath = nil;
+    cell.pauseStart = [NSDate dateWithTimeIntervalSinceNow:0];
+    cell.previousFireDate = [[OSAudioManager sharedInstance].timer fireDate];
+    cell.currentTime = [OSAudioManager sharedInstance].player.currentTime;
+    [cell.playPauseButton setBackgroundImage:[UIImage imageNamed:@"play"]
+                                    forState:UIControlStateNormal];
+    [[OSAudioManager sharedInstance] pausePlaying];
 }
 
 - (void)audioTableViewCell:(OSAudioTableViewCell *)cell
@@ -209,6 +221,7 @@
                                                   object:[OSAudioManager sharedInstance]];
     OSAudioTableViewCell *cell = [self.playerTableView cellForRowAtIndexPath:self.currentlyPlayingCellIndexPath];
     [cell showInitialState];
+    self.currentlyPlayingCellIndexPath = nil;
 }
 
 @end

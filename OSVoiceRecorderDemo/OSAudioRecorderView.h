@@ -16,7 +16,7 @@ typedef enum
 
 @protocol OSAudioRecorderViewDelegate <NSObject>
 
-- (void)audioManagerDidFinishRecording;
+- (void)audioManagerDidFinishRecording:(NSURL *)outputURL;
 
 @end
 

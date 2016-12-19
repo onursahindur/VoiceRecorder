@@ -21,6 +21,7 @@ static NSString *const playingFinished          = @"AudioManagerFinishedPlaying"
 @property (nonatomic, strong) AVAudioRecorder   *recorder;
 @property (nonatomic, strong) AVAudioPlayer     *player;
 @property (nonatomic, strong) NSTimer           *timer;
+@property (nonatomic, assign) NSInteger         currentRecordNumber;
 
 - (void)prepareToRecord:(NSInteger)recordNumber;
 - (void)startRecording;

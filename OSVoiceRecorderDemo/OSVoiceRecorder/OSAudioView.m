@@ -58,13 +58,11 @@
     [self.playerView distanceLeftToSuperview:0.0f];
     [self.playerView distanceRightToSuperview:0.0f];
     [self.playerView setHeightConstraint:1.0f];
-    
 }
 
-- (void)audioManagerDidFinishRecording
+- (void)audioManagerDidFinishRecording:(NSURL *)outputURL
 {
-    NSURL *fileURL = [OSAudioManager sharedInstance].recorder.url;
-    [self.playerView.audioFilesURLArray addObject:fileURL];
+    [self.playerView.audioFilesURLArray addObject:outputURL];
     [self.playerView addTableViewRow];
     [self.playerView changeTableViewHeight:YES];
 }

@@ -173,9 +173,9 @@
     [[NSNotificationCenter defaultCenter] removeObserver:self
                                                     name:recordingFinished
                                                   object:[OSAudioManager sharedInstance]];
-    if ([self.delegate respondsToSelector:@selector(audioManagerDidFinishRecording)])
+    if ([self.delegate respondsToSelector:@selector(audioManagerDidFinishRecording:)])
     {
-        [self.delegate audioManagerDidFinishRecording];
+        [self.delegate audioManagerDidFinishRecording:[notification.userInfo objectForKey:@"url"]];
     }
 }
 

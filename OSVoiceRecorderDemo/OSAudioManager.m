@@ -45,6 +45,12 @@
     self.recordings = [NSMutableArray new];
     self.currentRecordNumber = recordNumber;
     
+    // Add observer
+    [[NSNotificationCenter defaultCenter] addObserver:self
+                                             selector:@selector(handleAudioSessionInterruption:)
+                                                 name:AVAudioSessionInterruptionNotification
+                                               object:[AVAudioSession sharedInstance]];
+    
     // Init session
     [[AVAudioSession sharedInstance] setCategory:AVAudioSessionCategoryPlayAndRecord withOptions:AVAudioSessionCategoryOptionDefaultToSpeaker error:nil];
     [[AVAudioSession sharedInstance] setMode:AVAudioSessionModeSpokenAudio error:nil];
@@ -55,6 +61,7 @@
 
 - (void)initRecording
 {
+    // Init record settings
     NSMutableDictionary *recordSettings = [NSMutableDictionary new];
     [recordSettings setValue:[NSNumber numberWithInt:kAudioFormatMPEG4AAC] forKey:AVFormatIDKey];
     [recordSettings setValue:[NSNumber numberWithFloat:44100.0] forKey:AVSampleRateKey];
@@ -63,8 +70,10 @@
     NSArray *appendedAudioPath = @[NSTemporaryDirectory(), recordName]; // name of the final audio file
     NSURL *outputFileURL = [NSURL fileURLWithPathComponents:appendedAudioPath];
     
+    // Add new recording to mutable array
     [self.recordings addObject:outputFileURL];
     
+    // Init recorder
     self.recorder = [[AVAudioRecorder alloc] initWithURL:outputFileURL settings:recordSettings error:NULL];
     self.recorder.delegate = self;
     self.recorder.meteringEnabled = YES;
@@ -73,16 +82,22 @@
 
 - (void)startRecording
 {
+    // Stop player
     if ([self.player isPlaying])
     {
+        [[NSNotificationCenter defaultCenter] postNotificationName:playingFinished
+                                                            object:self
+                                                          userInfo:nil];
         [self.timer invalidate];
         [self.player stop];
     }
-    self.timer = nil;
     self.player = nil;
     self.player.delegate = nil;
     
-    [self resumeTimer];
+    // Prepare timer
+    self.previousFireDate = nil;
+    self.pauseStart = nil;
+    [self setTimer];
     
     [[AVAudioSession sharedInstance] setActive:YES error:nil];
     
@@ -94,11 +109,6 @@
         self.isInterrupted = NO;
     }
     
-    
-    [[NSNotificationCenter defaultCenter] addObserver:self
-                                             selector:@selector(handleAudioSessionInterruption:)
-                                                 name:AVAudioSessionInterruptionNotification
-                                               object:[AVAudioSession sharedInstance]];
     [self.recorder record];
 }
 
@@ -166,22 +176,23 @@
 {
     self.pauseStart = [NSDate dateWithTimeIntervalSinceNow:0];
     self.previousFireDate = [self.timer fireDate];
-    [self.timer setFireDate:[NSDate distantFuture]];
+    [self.timer invalidate];
+    self.timer = nil;
 }
 
-- (void)resumeTimer
+- (void)setTimer
 {
-    if (!self.timer)
+    self.timer = [NSTimer scheduledTimerWithTimeInterval:1.0
+                                                  target:self
+                                                selector:@selector(timerTickTock:)
+                                                userInfo:nil
+                                                 repeats:YES];
+    if (self.pauseStart && self.previousFireDate)
     {
-        self.timer = [NSTimer scheduledTimerWithTimeInterval:1.0
-                                                      target:self
-                                                    selector:@selector(timerTickTock:)
-                                                    userInfo:nil
-                                                     repeats:YES];
-        return;
+        float pauseTime = - 1 * [self.pauseStart timeIntervalSinceNow];
+        [self.timer setFireDate:[NSDate dateWithTimeInterval:pauseTime sinceDate:self.previousFireDate]];
     }
-    float pauseTime = - 1 * [self.pauseStart timeIntervalSinceNow];
-    [self.timer setFireDate:[NSDate dateWithTimeInterval:pauseTime sinceDate:self.previousFireDate]];
+    NSLog(@"timer set!");
 }
 
 - (void)timerTickTock:(NSTimer *)sender
@@ -199,20 +210,29 @@
     [[NSNotificationCenter defaultCenter] postNotificationName:timerTicked
                                                         object:self
                                                       userInfo:userInfo];
+    NSLog(@"tiktok");
 }
 
 #pragma mark - AVAudio delegates
 - (void)audioRecorderDidFinishRecording:(AVAudioRecorder *)avrecorder
                            successfully:(BOOL)flag
 {
+    // Remove observer
+    [[NSNotificationCenter defaultCenter] removeObserver:self
+                                                    name:AVAudioSessionInterruptionNotification
+                                                  object:[AVAudioSession sharedInstance]];
+    
+    __weak typeof (self) weakSelf = self;
     [self appendAudiosAtURLs:self.recordings completion:^(BOOL success, NSURL *outputUrl)
     {
-        [self.timer invalidate];
-        self.timer = nil;
+        __strong typeof (weakSelf) strongSelf = weakSelf;
+        [strongSelf clearContentsOfDirectory:NSTemporaryDirectory()];
+        [strongSelf.timer invalidate];
+        strongSelf.timer = nil;
         NSDictionary *userInfo = @{@"successful":[NSNumber numberWithBool:flag],
                                    @"url": outputUrl};
         [[NSNotificationCenter defaultCenter] postNotificationName:recordingFinished
-                                                            object:self
+                                                            object:strongSelf
                                                           userInfo:userInfo];
     }];
 }
@@ -237,13 +257,13 @@
     {
         case AVAudioSessionInterruptionTypeBegan:
         {
+            self.isInterrupted = YES;
             self.preInterruptionDuration += self.recorder.currentTime; // time elapsed
             [self.recorder pause];
             [self pauseTimer];
             
             self.recorder.delegate = nil;   // Set delegate to nil so that audioRecorderDidFinishRecording may not get called
             [self.recorder stop];           // stop recording
-            self.isInterrupted = YES;
         }
             break;
         case AVAudioSessionInterruptionTypeEnded:

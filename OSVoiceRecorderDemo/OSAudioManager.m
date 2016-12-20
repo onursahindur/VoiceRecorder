@@ -52,8 +52,11 @@
                                                object:[AVAudioSession sharedInstance]];
     
     // Init session
-    [[AVAudioSession sharedInstance] setCategory:AVAudioSessionCategoryPlayAndRecord withOptions:AVAudioSessionCategoryOptionDefaultToSpeaker error:nil];
-    [[AVAudioSession sharedInstance] setMode:AVAudioSessionModeSpokenAudio error:nil];
+    [[AVAudioSession sharedInstance] setCategory:AVAudioSessionCategoryPlayAndRecord
+                                     withOptions:AVAudioSessionCategoryOptionDefaultToSpeaker
+                                           error:nil];
+    [[AVAudioSession sharedInstance] setMode:AVAudioSessionModeSpokenAudio
+                                       error:nil];
     
     // Init recorder
     [self initRecording];
@@ -74,7 +77,9 @@
     [self.recordings addObject:outputFileURL];
     
     // Init recorder
-    self.recorder = [[AVAudioRecorder alloc] initWithURL:outputFileURL settings:recordSettings error:NULL];
+    self.recorder = [[AVAudioRecorder alloc] initWithURL:outputFileURL
+                                                settings:recordSettings
+                                                   error:nil];
     self.recorder.delegate = self;
     self.recorder.meteringEnabled = YES;
     [self.recorder prepareToRecord];
